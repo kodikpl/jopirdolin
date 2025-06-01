@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>qrde.xyz</title>
+  <style>
+    * {
+      margin: 0; padding: 0; box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: url('https://www.tvpolsat.info/wp-content/uploads/2021/08/polsatoprawa-1280x720.jpg') no-repeat center center fixed;
+      background-size: cover;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      animation: fadeInDown 1s ease-out;
+      text-align: center;
+    }
+
+    .container {
+      background: rgba(81,45,169,0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 1rem;
+      padding: 2rem;
+      max-width: 700px;
+      width: 100%;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .link {
+      display: block;
+      color: white;
+      text-decoration: none;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      transition: background 0.3s ease;
+    }
+
+    .link:hover {
+      background: rgba(81,45,169, 0.2);
+    }
+
+    .loading {
+      font-size: 1.2rem;
+      opacity: 0.8;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <h1>elo :3</h1>
+  <div class="container" id="content">
+    <div class="loading">Ładowanie plików z GitHub...</div>
+  </div>
+
+  <script>
+    const username = 'kodikpl';
+    const repo = 'jopirdolin';
+    const branch = 'main';
+
+    function getPathFromURL() {
+      const path = window.location.pathname;
+      return path.replace(/^\\//, ''); // usuń początkowy ukośnik
+    }
+
+    async function loadRepoContents() {
+      const container = document.getElementById('content');
+      const folderPath = getPathFromURL();
+      const apiURL = `https://api.github.com/repos/${username}/${repo}/contents/${folderPath}?ref=${branch}`;
+      const githubBaseURL = `https://github.com/${username}/${repo}/tree/${branch}/${folderPath}`;
+
+      try {
+        const res = await fetch(apiURL);
+        if (!res.ok) {
+          const errorMsg = `Błąd ${res.status}: ${res.statusText}`;
+          const json = await res.json().catch(() => ({}));
+          const details = json.message ? ` (${json.message})` : '';
+          container.innerHTML = `<div class="loading">Nie udało się załadować: ${errorMsg}${details}</div>`;
+          return;
+        }
+
+        const files = await res.json();
+        container.innerHTML = '';
+
+        // Link do folderu wyżej jeśli nie jesteśmy w root
+        if (folderPath) {
+          const parentPath = folderPath.split('/').slice(0, -1).join('/');
+          const upLink = document.createElement('a');
+          upLink.href = `/${parentPath}`;
+          upLink.textContent = '⬅ Wróć do folderu wyżej';
+          upLink.className = 'link';
+          container.appendChild(upLink);
+        }
+
+        // Lista plików/folderów
+        files.forEach(file => {
+          const a = document.createElement('a');
+          if (file.type === 'dir') {
+            a.href = `/${folderPath ? folderPath + '/' : ''}${file.name}`;
+          } else {
+            a.href = file.download_url;
+          }
+          a.textContent = file.name + (file.type === 'dir' ? '/' : '');
+          a.className = 'link';
+          a.target = '_blank';
+          container.appendChild(a);
+        });
+      } catch (error) {
+        container.innerHTML = `<div class="loading">Wystąpił błąd: ${error.message}</div>`;
+      }
+    }
+
+    loadRepoContents();
+  </script>
+</body>
+</html>
